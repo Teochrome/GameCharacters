@@ -195,12 +195,12 @@ namespace GameCharacters
                         character[i].camp_check();
                         if (character[active_character - 1].camp_check() == character[i].camp_check()) 
                         {
-                            Console.WriteLine($"На вашей клетке другой союзный персонаж, это {character[i].character_name}");
+                            Console.WriteLine($": На вашей клетке другой союзный персонаж, это {character[i].character_name}");
                             Thread.Sleep(3000);
                         }
                         if (character[active_character - 1].camp_check() != character[i].camp_check())
                         {
-                            Console.WriteLine($"На вашей клетке враг {character[i].character_name}! Вступить в бой? (Y/N/F)");
+                            Console.WriteLine($": На вашей клетке враг {character[i].character_name}! Вступить в бой? (Y/N/F)");
                             select = Console.ReadKey().Key;
                             switch (select)
                             {
@@ -214,7 +214,8 @@ namespace GameCharacters
                                     }
                                     if(character[i].life_check() == true)
                                     {
-                                        Console.WriteLine("Вы победили противника! Теперь он будет отображаться, как союзник.");
+                                        Console.WriteLine(": Вы победили противника! Теперь он будет отображаться, как союзник.");
+                                        Thread.Sleep(5000);
                                         character[i].camp = character[active_character - 1].camp;
                                         goto start;
                                     }
