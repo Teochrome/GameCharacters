@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -16,12 +16,14 @@ namespace GameCharacters
         private string character_name;
         private bool game_over;
         private bool used_heal;
-        private bool named;
+        private int false_w;
+        private int true_w;
         private int number;
         private int coordinate_x;
         private int coordinate_y;
         private int hp;
         private int lives_amount;
+        private bool victory_of;
         private bool camp;
         static Random rand = new Random();
         public static GameCharacter[] character = new GameCharacter[3];
@@ -34,8 +36,8 @@ namespace GameCharacters
             hp = hitpoints;
             lives_amount = lives;
         }
-        private void ally_info() 
-        { 
+        private void ally_info()
+        {
             for (int i = 0; i < ch_amount; i++)
             {
                 character[i].camp_check();
@@ -118,30 +120,31 @@ namespace GameCharacters
                 used_heal = true;
             }
         }
-        private void damage(int uron) 
+        private void damage(int uron)
         {
-            hp -= uron;
-            if (hp < 0 && lives_amount != 0 || lives_amount > 0)
+            if (uron < hp) hp -= uron;
+            else hp = 0;
+            if (hp == 0 && lives_amount != 0 || lives_amount > 0)
             {
                 lives_amount -= 1;
                 hp = 10;
             }
         }
-        private bool life_check() 
+        private bool life_check()
         {
-            if (hp < 0 && lives_amount == 0 || lives_amount < 0)
+            if (hp <= 0 && lives_amount == 0 || lives_amount < 0)
             {
                 game_over = true;
             }
             return game_over;
         }
-        public static int choose() 
+        public static int choose()
         {
             Console.WriteLine(": Введите номер персонажа, за которого желаете сыграть:");
             active_character = int.Parse(Console.ReadLine());
             return active_character - 1;
         }
-        private void actions() 
+        private void actions()
         {
             Console.WriteLine("1 - перенести персонажа по оси X");
             Console.WriteLine("2 - перенести персонажа по оси Y");
@@ -149,7 +152,7 @@ namespace GameCharacters
             Console.WriteLine("4 - выбрать другого персонажа");
             Console.WriteLine("5 - вывести информацию о живых союзниках");
             select = Console.ReadKey().Key;
-            switch (select) 
+            switch (select)
             {
                 case ConsoleKey.NumPad1:
                     movex();
@@ -168,9 +171,9 @@ namespace GameCharacters
                     break;
             }
         }
-        private bool camp_check() 
-        { 
-            switch (camp) 
+        private bool camp_check()
+        {
+            switch (camp)
             {
                 case false:
                     return false;
@@ -178,11 +181,49 @@ namespace GameCharacters
                     return true;
             }
         }
-        public void game() 
-        { 
-            while (game_over != true) 
+        private int fraction_victory_check()
+        {
+            true_w = 0;
+            false_w = 0;
+            int victory = 3;
+            for (int i = 0; i < ch_amount; i++) 
+            {
+                if (character[i].camp == true) true_w += 1;
+                else if (character[i].camp == false) false_w += 1;
+            }
+            if (false_w == ch_amount)
+            {
+                victory_of = false;
+                victory = 1;
+            }
+            if (true_w == ch_amount)
+            {
+                victory_of = true;
+                victory = 2;
+            }
+            return victory;
+        }
+        public void game()
+        {
+            while (game_over != true)
             {
             start:
+                if (character[active_character - 1].life_check() == true)
+                {
+                    Console.WriteLine(": К сожалению, ваш персонаж мёртв");
+                    character[choose()].game();
+                    game_over = true;
+                }
+                if (fraction_victory_check() == 2) 
+                {
+                    Console.WriteLine("Конец! На поле не осталось никого, кроме лагеря True!");
+                    Environment.Exit(0);
+                }
+                else if (fraction_victory_check() == 1)
+                {
+                    Console.WriteLine("Конец! На поле не осталось никого, кроме лагеря False!");
+                    Environment.Exit(0);
+                }
                 Console.Clear();
                 print();
                 actions();
@@ -193,7 +234,7 @@ namespace GameCharacters
                     {
                         character[active_character - 1].camp_check();
                         character[i].camp_check();
-                        if (character[active_character - 1].camp_check() == character[i].camp_check()) 
+                        if (character[active_character - 1].camp_check() == character[i].camp_check())
                         {
                             Console.WriteLine($": На вашей клетке другой союзный персонаж, это {character[i].character_name}");
                             Thread.Sleep(3000);
@@ -206,31 +247,35 @@ namespace GameCharacters
                             {
                                 case ConsoleKey.Y:
                                 again:
+                                    int cout_d = rand.Next(2, 5);
+                                    character[active_character - 1].damage(cout_d);
                                     if (character[active_character - 1].life_check() == true)
                                     {
-                                        Console.WriteLine(": К сожалению, ваш персонаж погиб");
+                                        Console.WriteLine(": К сожалению, ваш персонаж мёртв");
                                         character[choose()].game();
                                         game_over = true;
                                     }
-                                    if(character[i].life_check() == true)
-                                    {
-                                        Console.WriteLine(": Вы победили противника! Теперь он будет отображаться, как союзник.");
-                                        Thread.Sleep(5000);
-                                        character[i].camp = character[active_character - 1].camp;
-                                        goto start;
-                                    }
-                                    int cout_d = rand.Next(2, 5);
-                                    character[active_character - 1].damage(cout_d);
                                     Console.Clear();
                                     character[active_character - 1].print();
                                     character[i].print();
                                     Console.WriteLine($": Вы получили {cout_d} урона от противника!");
+                                    Thread.Sleep(2000);
                                     cout_d = rand.Next(2, 5);
                                     character[i].damage(cout_d);
+                                    if (character[i].life_check() == true)
+                                    {
+                                        Console.WriteLine("Вы победили противника! Теперь он будет отображаться, как союзник.");
+                                        Thread.Sleep(5000);
+                                        character[i].camp = character[active_character - 1].camp;
+                                        goto start;
+                                    }
+                                    Console.Clear();
+                                    character[active_character - 1].print();
+                                    character[i].print();
                                     Console.WriteLine($": Вы нанесли {cout_d} урона!\n");
                                     Console.WriteLine("Продолжить бой? (Y/N)");
                                     select = Console.ReadKey().Key;
-                                    switch (select) 
+                                    switch (select)
                                     {
                                         case ConsoleKey.Y:
                                             goto again;
@@ -239,6 +284,14 @@ namespace GameCharacters
                                     }
                                     break;
                                 case ConsoleKey.N:
+                                    Console.WriteLine(": Вы отказались от битвы, получено 5 урона");
+                                    character[active_character - 1].hp -= 5;
+                                    if (character[active_character - 1].life_check() == true)
+                                    {
+                                        Console.WriteLine(": К сожалению, ваш персонаж мёртв");
+                                        character[choose()].game();
+                                        game_over = true;
+                                    }
                                     if (coordinate_x < 5)
                                     {
                                         coordinate_x += 1;
@@ -255,12 +308,10 @@ namespace GameCharacters
                                     {
                                         coordinate_y -= 1;
                                     }
-                                    Console.WriteLine(": Вы отказались от битвы, получено 5 урона");
-                                    character[active_character - 1].hp -= 5;
                                     break;
                                 case ConsoleKey.F:
                                     int chance_to_flee = rand.Next(0, 1);
-                                    switch (chance_to_flee) 
+                                    switch (chance_to_flee)
                                     {
                                         case 0:
                                             character[active_character - 1].hp -= 5;
